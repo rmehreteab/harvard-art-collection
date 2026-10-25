@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Art Match</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="game.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-row">
+      <div>
+        <h1>Art Match</h1>
+        <p class="subtitle">How well do you know the Harvard Art Museums?</p>
+      </div>
+      <a class="nav-link" href="index.html">← Back to the collection</a>
+    </div>
+  </header>
+
+  <main class="wrap game">
+    <section id="start" class="panel">
+      <h2>Choose a round</h2>
+      <div class="modes">
+        <button class="mode" data-mode="artist"><strong>Who made it?</strong><span>Match the work to its artist</span></button>
+        <button class="mode" data-mode="century"><strong>When was it made?</strong><span>Guess the century</span></button>
+        <button class="mode" data-mode="culture"><strong>Where is it from?</strong><span>Name the culture</span></button>
+      </div>
+      <p class="hint">10 works per round · build a streak for bonus points</p>
+    </section>
+
+    <section id="play" class="panel" hidden>
+      <div class="scorebar">
+        <span id="round"></span>
+        <span id="streak"></span>
+        <span id="score"></span>
+      </div>
+      <div class="play-layout">
+        <figure class="artwork">
+          <div class="art-frame">
+            <img id="art-img" alt="">
+            <div id="art-masks" aria-hidden="true"></div>
+          </div>
+          <figcaption id="art-caption"></figcaption>
+        </figure>
+        <div class="question">
+          <h2 id="prompt"></h2>
+          <div id="choices" class="choices"></div>
+          <p id="feedback" class="feedback" aria-live="polite"></p>
+          <button id="next-btn" class="primary" type="button" hidden>Next work →</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="end" class="panel" hidden>
+      <h2 id="final-score"></h2>
+      <p id="final-msg"></p>
+      <div id="recap" class="recap"></div>
+      <button id="again" class="primary" type="button">Play again</button>
+    </section>
+
+    <p id="status" class="status"></p>
+  </main>
+
+  <dialog id="key-dialog">
+    <form method="dialog" id="key-form">
+      <h2>Enter your API key</h2>
+      <p>The key is saved only in this browser and sent only to api.harvardartmuseums.org.</p>
+      <input id="key-input" type="text" autocomplete="off" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+      <button type="submit">Save</button>
+    </form>
+  </dialog>
+
+  <script src="config.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

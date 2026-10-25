@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Harvard Art Museums Collection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <h1>The Collection</h1>
+      <p class="subtitle">Works from the Harvard Art Museums · <a href="game.html" style="color:var(--accent)">Play Art Match →</a></p>
+    </div>
+  </header>
+
+  <section class="controls wrap">
+    <form id="search-form">
+      <input id="keyword" type="search" placeholder="Search artists, titles, cultures…" aria-label="Search">
+      <select id="classification" aria-label="Classification">
+        <option value="">All classifications</option>
+      </select>
+      <select id="sort" aria-label="Sort">
+        <option value="rank">Relevance</option>
+        <option value="totalpageviews:desc">Most viewed</option>
+        <option value="datebegin:asc">Oldest first</option>
+        <option value="datebegin:desc">Newest first</option>
+        <option value="title:asc">Title A–Z</option>
+        <option value="random">Random</option>
+      </select>
+      <label class="check"><input id="hasimage" type="checkbox" checked> With images only</label>
+      <button type="submit">Search</button>
+    </form>
+    <p id="status" class="status" aria-live="polite"></p>
+  </section>
+
+  <main class="wrap">
+    <div id="grid" class="grid"></div>
+    <nav class="pager">
+      <button id="prev" type="button">← Previous</button>
+      <span id="page-info"></span>
+      <button id="next" type="button">Next →</button>
+    </nav>
+  </main>
+
+  <dialog id="detail">
+    <button class="close" type="button" aria-label="Close">×</button>
+    <div id="detail-body"></div>
+  </dialog>
+
+  <dialog id="key-dialog">
+    <form method="dialog" id="key-form">
+      <h2>Enter your API key</h2>
+      <p>The key is saved only in this browser and sent only to api.harvardartmuseums.org.</p>
+      <input id="key-input" type="text" autocomplete="off" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+      <button type="submit">Save</button>
+    </form>
+  </dialog>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
