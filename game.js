@@ -29,7 +29,7 @@ const MODES = {
 };
 
 // Blank out the answer (and each meaningful word of it) so titles like "Portrait of Jane Smith" don't give it away.
-const PARTICLES = new Set(["van", "von", "der", "den", "del", "della", "des", "the", "and", "after", "attributed", "workshop", "circle", "school", "century"]);
+const PARTICLES = new Set(["van", "von", "der", "den", "del", "della", "des", "the", "and", "after", "attributed", "sir", "saint", "workshop", "circle", "school", "century", "younger", "elder", "jeune", "fils"]);
 function redact(text, answer) {
   if (!text || !answer) return text || "";
   const words = answer.split(/[\s,.()]+/).filter((w) => w.length >= 3 && !PARTICLES.has(w.toLowerCase()));
@@ -74,20 +74,60 @@ async function fetchRandomWorks() {
   return data.records || [];
 }
 
-// The museum runs text recognition on its images. Use those boxes to cover any
-// lettering (signatures, printed captions) that could give the answer away.
-// Boxes are stored as percentages of the image so they scale with it.
-async function fetchTextBoxes(o) {
+// Lowercase, strip accents and punctuation so "Nanteuil," matches "NANTEUIL".
+const normalize = (s) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+
+// Edit distance, so slightly misread text ("Nanteui1", "Nantevil") still counts as a match.
+function editDistance(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+// Common short words in print captions ("par", "et", "de") that shouldn't be mistaken for initials.
+const SHORT_WORDS = new Set(["a", "i", "o", "y", "e", "de", "du", "da", "di", "do", "des", "del", "dei", "et", "en", "la", "le", "les", "il", "lo", "un", "une", "au", "aux", "par", "pas", "ne", "ce", "ca", "sa", "se", "es", "est", "qui", "que", "the", "of", "and", "in", "on", "to", "by", "at", "an", "is", "it", "und", "von", "van", "der", "die", "das", "ex", "cum", "sc", "fec", "inv", "exc", "del", "pin", "imp", "no", "nr"]);
+
+// Does a piece of recognized text contain any meaningful word of the answer, or the artist's initials?
+function mentionsAnswer(text, answer) {
+  const targets = answer.split(/[\s,.()]+/).filter((w) => w.length >= 3 && !PARTICLES.has(w.toLowerCase())).map(normalize).filter(Boolean);
+  const initials = new Set(answer.split(/[\s,.()\-]+/).filter((w) => w && !PARTICLES.has(w.toLowerCase())).map((w) => normalize(w)[0]).filter(Boolean));
+  // Monograms like "H.D." are read as short letter clusters ("hd", or misread as "bh"):
+  // cover a 1-2 letter cluster with one of the artist's initials, or a 3-letter one with
+  // at least two (so "DWR" counts but ordinary words like "has" don't).
+  const short = text.split(/\s+/).map(normalize).filter((w) => /^\p{L}{1,3}$/u.test(w) && !SHORT_WORDS.has(w));
+  if (short.some((w) => [...w].filter((c) => initials.has(c)).length >= (w.length === 3 ? 2 : 1))) return true;
+  const words = text.split(/\s+/).map(normalize).filter((w) => w.length >= 3);
+  return words.some((w) => targets.some((t) =>
+    w === t || (t.length >= 5 && w.includes(t)) || (t.length >= 5 && Math.abs(w.length - t.length) <= 1 && editDistance(w, t) <= 1) ||
+    // Handwritten signatures are often badly misread ("Castillo" -> "cailbe"), but usually
+    // keep the first letters and a similar length.
+    (t.length >= 5 && w.length >= 4 && w.slice(0, 2) === t.slice(0, 2) && Math.abs(w.length - t.length) <= 3 && editDistance(w, t) <= Math.ceil(t.length / 2))));
+}
+
+// The museum runs text recognition on its images. Use those results to cover only
+// the lettering that names the answer (e.g. an engraver's credit), leaving the rest
+// of the picture visible. Boxes are stored as percentages of the image so they scale with it.
+async function fetchTextBoxes(o, answer) {
   const img = o.images?.find((i) => i.baseimageurl && o.primaryimageurl?.startsWith(i.baseimageurl)) || o.images?.[0];
   if (!img?.imageid || !img.width || !img.height) return [];
   try {
     const data = await api("/annotation", { q: `imageid:${img.imageid} AND type:text`, size: 100 });
-    return (data.records || []).flatMap((r) => {
+    const hits = (data.records || []).flatMap((r) => {
       const m = /xywh=(\d+),(\d+),(\d+),(\d+)/.exec(r.selectors?.[0]?.value || "");
-      if (!m) return [];
+      if (!m || !r.body || !mentionsAnswer(r.body, answer)) return [];
       const [x, y, w, h] = m.slice(1).map(Number);
-      return [{ left: (x / img.width) * 100, top: (y / img.height) * 100, width: (w / img.width) * 100, height: (h / img.height) * 100 }];
+      const box = { left: (x / img.width) * 100, top: (y / img.height) * 100, width: (w / img.width) * 100, height: (h / img.height) * 100 };
+      // Skip oversized regions (whole paragraphs or misreads of the picture itself).
+      if (box.width * box.height > 600 || box.height > 12) return [];
+      return [{ ...box, single: !/\s/.test(r.body.trim()) }];
     });
+    // Prefer single-word boxes; fall back to whole lines only when no word box matched.
+    const words = hits.filter((b) => b.single);
+    return words.length ? words : hits;
   } catch {
     return [];
   }
@@ -110,7 +150,7 @@ async function startGame(mode) {
     const answers = [...new Set(usable.map(m.answer))];
     if (usable.length < ROUNDS || answers.length < 4) throw new Error("Couldn't find enough works for this round. Try again.");
     const items = shuffle(usable).slice(0, ROUNDS);
-    await Promise.all(items.map(async (o) => { o.textBoxes = await fetchTextBoxes(o); }));
+    await Promise.all(items.map(async (o) => { o.textBoxes = await fetchTextBoxes(o, m.answer(o)); }));
     for (const o of items) new Image().src = `${o.primaryimageurl}?width=900`; // preload
     Object.assign(game, { mode, i: 0, score: 0, streak: 0, results: [], items, pool: answers });
     $("status").textContent = "";
@@ -138,7 +178,7 @@ function renderQuestion() {
   $("art-img").src = `${o.primaryimageurl}?width=900`;
   $("art-masks").classList.remove("revealed");
   $("art-masks").innerHTML = o.textBoxes.map((b) =>
-    `<span style="left:${b.left - 1}%;top:${b.top - 1}%;width:${b.width + 2}%;height:${b.height + 2}%"></span>`).join("");
+    `<span style="left:${b.left - 0.5}%;top:${b.top - 0.5}%;width:${b.width + 1}%;height:${b.height + 1}%"></span>`).join("");
   $("art-img").alt = redact(o.title, correct) || "Artwork";
   $("art-caption").textContent = redact(m.caption(o), correct);
   $("prompt").textContent = m.prompt;
