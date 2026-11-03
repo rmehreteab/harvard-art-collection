@@ -2,7 +2,7 @@
 
 ## Relevant background of the Harvard Art Collection Website
 
-The Harvard Art Museum holds several pieces of art from Vincent van Gogh to Claude Monet. Today, visitors are able to view the collections the museum has to offer. My website introduces users to the over 200,000 objects found in the museum. The interactive matching game is the highlight of our website, where players have to attribute each work by looking at its style and technique, and match it to an artist. Many artworks give the answer away with text that includes an artist's signature, an artist's initial, or a printed credit line on an engraving, but, I've blacked those out, so user's can use their image analysis techniques to guess the artist. The website also includes a search tool where users can type in an artist name and learn about their pieces at the museum. Enjoy the website! 
+The Harvard Art Museum holds several pieces of art from Vincent van Gogh to Claude Monet. Today, visitors are able to view the collections the museum has to offer. My website introduces users to the over 200,000 objects found in the museum. The interactive matching game is the highlight of our website, where players have to match the artist to their work by looking at its style and technique. Many artworks give the answer away with text that includes an artist's signature, an artist's initial, or a printed credit line on an engraving, but, I've blacked those out, so user's can use their image analysis techniques to guess the artist. The website also includes a search tool where users can type in an artist name and learn about their pieces at the museum. Enjoy the website! 
 
 ## How it works
 
