@@ -1,4 +1,4 @@
-# Harvard Art Collection - a website for browsing the Harvard Art Museums' collection. The website also includes a fun, interactive **Art Matching Game** that users can choose to play!  
+# Harvard Art Collection 
 
 ## Relevant background of the Harvard Art Collection Website
 
